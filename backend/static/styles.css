@@ -1,20 +1,61 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;700&display=swap");
+
+:root {
+  --color-bg-primary: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-surface: #243248;
+  --color-accent-primary: #3b82f6;
+  --color-accent-glow: #60a5fa;
+  --color-metallic: #cbd5e1;
+  --color-text-primary: #e2e8f0;
+  --color-text-secondary: #94a3b8;
+  --color-border: rgba(203, 213, 225, 0.16);
+  --shadow-card: 0 24px 60px rgba(2, 6, 23, 0.38);
+  --radius-card: 24px;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+  --font-heading: "Orbitron", "Inter", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #f5f7fb;
-  color: #1f2937;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  background:
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.16), transparent 30%),
+    linear-gradient(160deg, var(--color-bg-primary) 0%, #111c31 100%);
 }
 
 main {
-  max-width: 720px;
+  width: min(760px, calc(100% - 2rem));
   margin: 4rem auto;
-  padding: 2rem;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  padding: 2.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, rgba(44, 61, 87, 0.92), rgba(30, 41, 59, 0.96));
+  box-shadow: var(--shadow-card);
 }
 
 h1 {
-  margin-top: 0;
+  margin: 0 0 1rem;
+  font-family: var(--font-heading);
+  color: var(--color-metallic);
+  line-height: 1;
 }
 
+p {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+code {
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.14);
+  color: var(--color-accent-glow);
+}

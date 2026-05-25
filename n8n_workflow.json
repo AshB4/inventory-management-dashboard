@@ -1,6 +1,176 @@
 {
-  "name": "capstone-project-workflow",
-  "nodes": [],
-  "connections": {}
+  "name": "Atlas Inventory Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "inventory-helper",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "1",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "question",
+              "name": "question",
+              "type": "string",
+              "value": "={{$json.body?.question || $json.body?.message || $json.query?.question || \"\"}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2",
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = ($json.question || '').trim();\nconst guidance = 'Try: How many products are low in stock? What is our most expensive product? Which items are out of stock? List all Sensors products.';\n\nif (!question) {\n  return [{\n    json: {\n      question,\n      intent: 'unsupported',\n      endpoint: '/api/health',\n      category: null,\n      guidance,\n      ai_model: null,\n    },\n  }];\n}\n\nconst apiKey = globalThis.process?.env?.OPENAI_API_KEY;\nif (!apiKey) {\n  throw new Error('OPENAI_API_KEY is not set for n8n. Restart n8n with your OpenAI API key before running Atlas Inventory Bot.');\n}\n\nconst schema = {\n  name: 'atlas_inventory_intent',\n  strict: true,\n  schema: {\n    type: 'object',\n    additionalProperties: false,\n    properties: {\n      intent: {\n        type: 'string',\n        enum: [\n          'total_products',\n          'low_stock',\n          'out_of_stock',\n          'inventory_value',\n          'most_expensive_product',\n          'products_by_category',\n          'list_all_products',\n          'unsupported'\n        ]\n      },\n      category: {\n        anyOf: [\n          { type: 'string' },\n          { type: 'null' }\n        ]\n      }\n    },\n    required: ['intent', 'category']\n  }\n};\n\nconst openAiResponse = await fetch('https://api.openai.com/v1/responses', {\n  method: 'POST',\n  headers: {\n    'Content-Type': 'application/json',\n    Authorization: `Bearer ${apiKey}`,\n  },\n  body: JSON.stringify({\n    model: 'gpt-4.1-mini',\n    input: [\n      {\n        role: 'system',\n        content: [\n          {\n            type: 'input_text',\n            text: 'You are Atlas Inventory Bot, an inventory assistant for a robotics supply dashboard. Classify the user question into one supported inventory intent. Supported intents: total_products, low_stock, out_of_stock, inventory_value, most_expensive_product, products_by_category, list_all_products, unsupported. Extract a category only when the user asks for products by category. Return JSON only.'\n          }\n        ]\n      },\n      {\n        role: 'user',\n        content: [\n          {\n            type: 'input_text',\n            text: question\n          }\n        ]\n      }\n    ],\n    text: {\n      format: {\n        type: 'json_schema',\n        name: schema.name,\n        strict: schema.strict,\n        schema: schema.schema\n      }\n    }\n  })\n});\n\nif (!openAiResponse.ok) {\n  const errorText = await openAiResponse.text();\n  throw new Error(`OpenAI classification failed: ${openAiResponse.status} ${errorText}`);\n}\n\nconst responsePayload = await openAiResponse.json();\nconst rawText = responsePayload.output_text || responsePayload.output?.flatMap((item) => item.content || []).find((content) => content.text)?.text || '{}';\nconst classification = JSON.parse(rawText);\n\nlet endpoint = '/api/health';\nlet category = classification.category ? String(classification.category).trim() : null;\n\nswitch (classification.intent) {\n  case 'low_stock':\n    endpoint = '/api/stats/low-stock';\n    break;\n  case 'out_of_stock':\n    endpoint = '/api/stats/out-of-stock';\n    break;\n  case 'inventory_value':\n    endpoint = '/api/stats/inventory-value';\n    break;\n  case 'total_products':\n    endpoint = '/api/stats/total-products';\n    break;\n  case 'most_expensive_product':\n    endpoint = '/api/stats/most-expensive-product';\n    break;\n  case 'list_all_products':\n    endpoint = '/api/products';\n    break;\n  case 'products_by_category':\n    endpoint = category ? `/api/products?category=${encodeURIComponent(category)}` : '/api/products';\n    break;\n  default:\n    endpoint = '/api/health';\n}\n\nreturn [{\n  json: {\n    question,\n    intent: classification.intent,\n    endpoint,\n    category,\n    guidance,\n    ai_model: 'gpt-4.1-mini'\n  }\n}];"
+      },
+      "id": "3",
+      "name": "AI Intent Classifier",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        820,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=http://127.0.0.1:5000{{$json.endpoint}}",
+        "options": {
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "4",
+      "name": "Call Flask API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.item.json;\nconst question = input.question || '';\nconst intent = input.intent;\nconst category = input.category;\nconst apiPayload = input.body || input;\n\nif (intent === 'unsupported') {\n  return [{\n    json: {\n      success: false,\n      question,\n      answer: `I can help with inventory lookups only. ${input.guidance}`,\n      data: null\n    }\n  }];\n}\n\nif (apiPayload.success === false) {\n  return [{\n    json: {\n      success: false,\n      question,\n      answer: apiPayload.message || 'The inventory API request failed.',\n      data: apiPayload.data || null,\n      errors: apiPayload.errors || null\n    }\n  }];\n}\n\nconst data = apiPayload.data;\nlet answer = '';\nlet responseData = data;\n\nif (intent === 'low_stock') {\n  answer = `There are ${data.low_stock_products} products currently marked as low stock.`;\n} else if (intent === 'out_of_stock') {\n  answer = `There are ${data.out_of_stock_products} products currently out of stock.`;\n} else if (intent === 'most_expensive_product') {\n  if (data.product) {\n    answer = `The most expensive product is ${data.product.name} at $${Number(data.product.price).toFixed(2)}.`;\n    responseData = data.product;\n  } else {\n    answer = 'No products were found in the catalog.';\n  }\n} else if (intent === 'inventory_value') {\n  answer = `The current total inventory value is $${Number(data.inventory_value).toFixed(2)}.`;\n} else if (intent === 'total_products') {\n  answer = `We currently have ${data.total_products} products registered in the catalog.`;\n} else if (intent === 'list_all_products') {\n  const names = data.map((product) => product.name);\n  answer = names.length\n    ? `Here are all products: ${names.join(', ')}.`\n    : 'No products were found in the catalog.';\n} else if (intent === 'products_by_category') {\n  answer = data.length\n    ? `I found ${data.length} ${category} product(s): ${data.map((product) => product.name).join(', ')}.`\n    : `No products were found in the ${category} category.`;\n}\n\nreturn [{\n  json: {\n    success: true,\n    question,\n    answer,\n    data: responseData\n  }\n}];"
+      },
+      "id": "5",
+      "name": "Format Assistant Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{$json}}",
+        "options": {}
+      },
+      "id": "6",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1600,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "AI Intent Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Intent Classifier": {
+      "main": [
+        [
+          {
+            "node": "Call Flask API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Flask API": {
+      "main": [
+        [
+          {
+            "node": "Format Assistant Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Assistant Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "name": "inventory"
+    },
+    {
+      "name": "assistant"
+    }
+  ],
+  "versionId": "2"
 }
-
