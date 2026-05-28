@@ -1,64 +1,180 @@
-# Inventory Management Dashboard
+# ATLAS Robotics Supply
 
-## Project Overview
+AI-assisted robotics inventory operations platform for catalog control, stock visibility, and workflow automation.
 
-Atlas Robotic Supply is a full-stack inventory management dashboard built for tracking robotics parts, monitoring stock health, and querying inventory data through an n8n-powered assistant workflow. The project combines a Flask API, a React dashboard, SQLite persistence, and an n8n webhook that classifies natural-language inventory questions and routes them to the correct backend endpoint.
+## Hero
+
+ATLAS Robotics Supply is a full-stack internal operations platform built to help robotics teams manage product inventory with speed, accuracy, and clear operational insight.
+
+The platform combines a React dashboard, Flask API, database-backed inventory records, and n8n automation workflows. Its built-in AI assistant, **A.R.I.A.** (Atlas Robotics Inventory Assistant), helps users query live inventory data through natural language.
+
+The application is designed for AWS EC2 deployment, with the production React build served through Flask and automation workflows supporting inventory intelligence and operational response.
+
+## Live Demo
+
+[LIVE_DEMO_PLACEHOLDER: Add deployed AWS URL]
 
 ## Features
 
-- Responsive React dashboard for inventory operations
-- Product creation, editing, and deletion for admin users
-- Read-only viewer mode for non-admin access
-- Searchable inventory table with category and status visibility
-- Analytics cards for total products, low-stock items, and total inventory value
-- Modal-based product editing and deletion confirmation
-- Atlas Inventory Bot widget for natural-language inventory questions
-- n8n workflow that maps user questions to backend inventory endpoints
-- Flask serving both API routes and the production React build
+- CRUD inventory management for robotics product records
+- AI-assisted inventory queries through A.R.I.A.
+- Low stock visibility and inventory health monitoring
+- Operational dashboard metrics for catalog count, stock risk, and inventory value
+- Audit-ready structure for inventory operations and future event logging
+- Responsive UI for desktop and mobile workflows
+- Accessibility-conscious interface patterns
+- Keyboard navigation support for core UI flows
+- AWS-ready deployment architecture
+- n8n workflow automation for inventory intelligence
 
 ## Tech Stack
 
-- Frontend: React 18, React Scripts, CSS
-- Backend: Flask, Flask-CORS, Flask-SQLAlchemy
-- Database: SQLite
-- Automation: n8n webhook workflow
-- AI integration: OpenAI Responses API via n8n code node
+### Frontend
 
-## Accessibility Features
+- React
+- JavaScript
+- CSS
+- Responsive dashboard components
+- Accessibility-conscious form and interaction patterns
 
-- Skip link to jump directly to main content
-- Semantic landmarks for header, sidebar navigation, and main content
-- Screen-reader-only labels for search, role selection, and chatbot input
-- `aria-live` feedback for status and success messages
-- Dialog semantics with `role="dialog"` and `aria-modal="true"`
-- Keyboard support for modal escape, tab trapping, and focus restoration
-- Explicit button labels and accessible chatbot toggle states
+### Backend
 
-## API Endpoints
+- Flask
+- Flask-CORS
+- Flask-SQLAlchemy
+- REST API endpoints
+- Production-ready WSGI deployment with Gunicorn
 
-Base API URL: `http://127.0.0.1:5000/api`
+### Database
 
-- `GET /api/health` - health check
-- `GET /api/products` - return all products
-- `POST /api/products` - create a product
-- `PUT /api/products/<id>` - update a product
-- `DELETE /api/products/<id>` - delete a product
-- `GET /api/stats/total-products` - return total product count
-- `GET /api/stats/low-stock` - return low-stock count
-- `GET /api/stats/inventory-value` - return total inventory value
-- `GET /api/stats/out-of-stock` - return out-of-stock count
-- `GET /api/stats/most-expensive-product` - return the most expensive product
+- SQLite for local development
+- PostgreSQL-ready architecture for production scaling
 
-## Installation
+### Automation
 
-### 1. Clone the project
+- n8n workflows
+- AI Agent workflow orchestration
+- OpenAI-powered natural language inventory assistance
+- HTTP tool integrations with the Flask API
 
-```bash
-git clone https://github.com/AshB4/inventory-management-dashboard.git
-cd inventory-management-dashboard/capstone-project
+### Deployment
+
+- AWS EC2
+- Gunicorn
+- Nginx reverse proxy
+- Production React build served through Flask
+
+## Architecture Overview
+
+```text
+User
+  |
+  v
+React Dashboard
+  |
+  |-- Inventory CRUD / Metrics
+  |      |
+  |      v
+  |   Flask REST API
+  |      |
+  |      v
+  |   SQLite / PostgreSQL
+  |
+  |-- A.R.I.A. Chat Assistant
+         |
+         v
+      n8n Chat Trigger
+         |
+         v
+      n8n AI Agent
+         |
+         v
+      Flask Inventory API Tools
+         |
+         v
+      Live Inventory Response
 ```
 
-### 2. Start the Flask backend
+## Accessibility Considerations
+
+- Semantic HTML structure for dashboard, forms, tables, and dialogs
+- Keyboard navigation support for critical inventory workflows
+- Accessible forms with clear labels and validation feedback
+- Focus-visible states for interactive controls
+- Contrast-aware UI styling for readability
+- Screen-reader-conscious labels, status messaging, and interaction patterns
+
+## A.R.I.A. Assistant
+
+**A.R.I.A.** stands for **Atlas Robotics Inventory Assistant**.
+
+A.R.I.A. helps users ask natural language questions about live inventory data. The assistant connects through n8n workflows and calls the Flask API tools to retrieve real product, stock, and catalog information.
+
+Example prompts:
+
+- "How many products are in inventory?"
+- "Which products are low in stock?"
+- "Show inventory for servo motors."
+- "What is the total inventory value?"
+- "What is the most expensive product?"
+
+## Automation Workflow
+
+ATLAS Robotics Supply uses n8n workflows to connect inventory operations with AI-assisted automation.
+
+The automation layer supports:
+
+- Natural language inventory queries
+- Live API calls into the product catalog
+- Low stock monitoring workflows
+- Operational alert foundations
+- Workflow-driven inventory intelligence
+
+n8n acts as the orchestration layer between the A.R.I.A. assistant, OpenAI model reasoning, and the Flask backend API.
+
+## AWS Deployment
+
+The application is designed for deployment on AWS EC2.
+
+Production deployment plan:
+
+- Build the React frontend with `npm run build`
+- Serve the compiled React application through Flask
+- Run Flask with Gunicorn
+- Use Nginx as a reverse proxy
+- Configure EC2 security groups for web traffic
+- Route a production subdomain to the EC2 instance
+
+In production, Flask hosts both:
+
+- the REST API under `/api/*`
+- the compiled React user interface
+
+## Screenshots
+
+[SCREENSHOT_PLACEHOLDER: Dashboard Overview]
+
+
+
+[SCREENSHOT_PLACEHOLDER: Inventory Table]
+
+
+
+[SCREENSHOT_PLACEHOLDER: Product Form]
+
+
+
+[SCREENSHOT_PLACEHOLDER: A.R.I.A. Assistant]
+
+
+
+[SCREENSHOT_PLACEHOLDER: Mobile Responsive Layout]
+
+
+
+## Local Development Setup
+
+### Backend Setup
 
 ```bash
 cd backend
@@ -69,125 +185,81 @@ python seed.py
 python app.py
 ```
 
-The backend runs on `http://127.0.0.1:5000`.
+The backend runs on:
 
-### 3. Start the React frontend
-
-Open a second terminal:
-
-```bash
-cd capstone-project/frontend
-npm install
-npm start
+```text
+http://127.0.0.1:5000
 ```
 
-The frontend runs on `http://localhost:3000`.
-
-### 4. Optional frontend environment variables
-
-- `REACT_APP_API_BASE` - override the default API base URL
-- `REACT_APP_N8N_WEBHOOK_URL` - override the default n8n webhook URL
-
-## Deployment Steps
-
-This project is structured so Flask can serve the built React app in production.
-
-### 1. Build the frontend
+### Frontend Setup
 
 ```bash
 cd frontend
 npm install
+npm start
+```
+
+The frontend runs on:
+
+```text
+http://localhost:3000
+```
+
+### Production Frontend Build
+
+```bash
+cd frontend
 npm run build
 ```
 
-### 2. Install backend dependencies
+The Flask backend is configured to serve the production React build from `frontend/build`.
+
+### n8n Setup
 
 ```bash
-cd ../backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python seed.py
+n8n start
 ```
 
-### 3. Start the backend server
+The n8n editor runs on:
 
-```bash
-python app.py
+```text
+http://localhost:5678
 ```
 
-Flask will serve:
-
-- the API under `/api/*`
-- the React production build from `frontend/build`
-- client-side routes through the SPA fallback
-
-### 4. Deploy notes
-
-- Keep `frontend/build` updated after frontend changes
-- Ensure the SQLite file is writable in the deployment environment
-- If using the n8n workflow, make sure the deployed workflow can reach the Flask API
-
-## n8n Workflow
-
-The exported workflow lives in [n8n_workflow.json](/Users/ash/inventory-management-dashboard/capstone-project/n8n_workflow.json).
-
-Workflow summary:
-
-1. `Webhook Trigger` accepts `POST` requests on `inventory-helper`
-2. `Normalize Input` extracts the incoming question
-3. `AI Intent Classifier` uses the OpenAI Responses API to classify the request
-4. `Call Flask API` requests the correct backend endpoint
-5. `Format Assistant Response` turns the API result into a user-facing answer
-6. `Respond to Webhook` returns the final JSON response
-
-Webhook URLs:
-
-- Test URL: `http://localhost:5678/webhook-test/inventory-helper`
-- Production URL: `http://localhost:5678/webhook/inventory-helper`
-
-Requirements:
-
-- n8n running on `localhost:5678`
-- `OPENAI_API_KEY` available to the n8n process
-- Flask backend running on `http://127.0.0.1:5000`
-
-Example request:
-
-```bash
-curl -X POST "http://localhost:5678/webhook/inventory-helper" \
-  -H "Content-Type: application/json" \
-  -d '{"question":"How many products do we have in the catalog?"}'
-```
-
-## Screenshots
-
-Add project screenshots here as they become available.
-
-- Dashboard overview
-- Product table and analytics cards
-- Product edit modal
-- Atlas Inventory Bot widget
-- n8n workflow canvas
-
-Example markdown:
-
-```md
-![Dashboard Overview](./screenshots/dashboard-overview.png)
-![Atlas Inventory Bot](./screenshots/inventory-bot.png)
-```
-
-## Live URL
-
-Repository: https://github.com/AshB4/inventory-management-dashboard
-
-Deployed app: `Add your live deployment URL here`
+The A.R.I.A. workflow should be active and configured with the Chat Trigger URL used by the frontend.
 
 ## Future Improvements
 
-- Replace SQLite with PostgreSQL for multi-user deployment
-- Add authentication and persistent user roles
-- Improve n8n workflow response handling for chatbot output
-- Add charts for category trends and stock movement over time
-- Add test coverage for React components and Flask endpoints
-- Add file upload support for bulk inventory imports
+- Full RBAC implementation for admin and viewer roles
+- Advanced analytics for inventory health and catalog performance
+- Inventory trend reporting over time
+- Enhanced accessibility auditing with automated checks
+- Expanded audit logging for product lifecycle events
+- Notification workflows for low stock and out-of-stock thresholds
+- PostgreSQL migration for production data durability
+
+## Repository Structure
+
+```text
+/
+├── frontend/
+│   ├── public/
+│   └── src/
+├── backend/
+│   ├── models/
+│   ├── static/
+│   └── templates/
+├── n8n_workflows/
+│   └── workflow exports
+├── screenshots/
+│   └── project screenshots
+├── n8n_workflow.json
+├── n8n_dashboard_webhook_workflow.json
+└── README.md
+```
+
+## Product Summary
+
+ATLAS Robotics Supply demonstrates a modern operations platform built around inventory accuracy, workflow automation, and AI-assisted decision support.
+
+The system brings together a responsive dashboard, live backend API, database persistence, n8n workflow orchestration, and A.R.I.A. to create a practical internal SaaS-style experience for robotics inventory teams.

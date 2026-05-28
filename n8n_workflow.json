@@ -1,5 +1,5 @@
 {
-  "name": "Atlas Inventory Bot",
+  "name": "A.R.I.A. Inventory Assistant",
   "nodes": [
     {
       "parameters": {
@@ -9,8 +9,8 @@
           "type": "icon",
           "value": "flask-conical"
         },
-        "agentName": "Atlas Inventory Bot",
-        "agentDescription": "Inventory assistant connected to the Flask API",
+        "agentName": "A.R.I.A.",
+        "agentDescription": "Atlas Robotics Inventory Assistant connected to the Flask API",
         "suggestedPrompts": {
           "prompts": [
             {
@@ -57,7 +57,7 @@
       "parameters": {
         "text": "={{ $json.chatInput }}",
         "options": {
-          "systemMessage": "You are Atlas Inventory Bot, an inventory assistant connected to a Flask API. Your job is to answer questions about product inventory using real data only. Rules: always use tools when the user asks about products, counts, stock, prices, value, or inventory. Never guess or hallucinate numbers. Use only the tool responses for factual claims. Respond in clear, natural English. Do not mention tools, endpoints, or internal system details."
+          "systemMessage": "You are A.R.I.A. (Atlas Robotics Inventory Assistant), an inventory assistant connected to a Flask API. Your job is to answer questions about product inventory using real data only. Rules: always use tools when the user asks about products, counts, stock, prices, value, or inventory. Never guess or hallucinate numbers. Use only the tool responses for factual claims. Respond in clear, natural English. Do not mention tools, endpoints, or internal system details."
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",

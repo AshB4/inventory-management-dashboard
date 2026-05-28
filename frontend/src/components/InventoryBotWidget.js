@@ -15,7 +15,7 @@ function InventoryBotWidget({ onAskBot }) {
     {
       id: "welcome",
       role: "bot",
-      text: "Ask about low stock, total inventory value, most expensive product, or products by category.",
+      text: "A.R.I.A. can answer live inventory questions about low stock, total value, expensive products, and categories.",
     },
   ]);
   const messagesEndRef = useRef(null);
@@ -51,7 +51,7 @@ function InventoryBotWidget({ onAskBot }) {
         {
           id: `bot-${Date.now()}`,
           role: "bot",
-          text: response.answer || "No response received from Atlas Inventory Bot.",
+          text: response.answer || "No response received from A.R.I.A.",
         },
       ]);
     } catch (error) {
@@ -60,7 +60,7 @@ function InventoryBotWidget({ onAskBot }) {
         {
           id: `error-${Date.now()}`,
           role: "bot",
-          text: error.message || "Atlas Inventory Bot is unavailable right now.",
+          text: error.message || "A.R.I.A. is unavailable right now.",
         },
       ]);
     } finally {
@@ -75,12 +75,16 @@ function InventoryBotWidget({ onAskBot }) {
 
   return (
     <aside
-      aria-label="Atlas Inventory Bot assistant"
+      aria-label="A.R.I.A. Atlas Robotics Inventory Assistant"
       className={`bot-widget ${isOpen ? "bot-widget--open" : "bot-widget--closed"}`}
     >
       <button
         aria-expanded={isOpen}
-        aria-label={isOpen ? "Minimize Atlas Inventory Bot" : "Open Atlas Inventory Bot"}
+        aria-label={
+          isOpen
+            ? "Minimize A.R.I.A. Atlas Robotics Inventory Assistant"
+            : "Open A.R.I.A. Atlas Robotics Inventory Assistant"
+        }
         className="bot-widget__toggle"
         onClick={() => setIsOpen((currentValue) => !currentValue)}
         type="button"
@@ -88,9 +92,9 @@ function InventoryBotWidget({ onAskBot }) {
         <img alt="" aria-hidden="true" className="bot-widget__logo" src={atlasLogo} />
         <span className="bot-widget__toggle-copy">
           <span className="bot-widget__eyebrow">
-            {isOpen ? "AI Assistant" : "Chat Bot"}
+            {isOpen ? "Inventory Assistant" : "Ask A.R.I.A."}
           </span>
-          <span className="bot-widget__title">Atlas Inventory Bot</span>
+          <span className="bot-widget__title">A.R.I.A.</span>
         </span>
         <span aria-hidden="true" className="bot-widget__toggle-icon">
           {isOpen ? "×" : "Chat"}
@@ -110,7 +114,7 @@ function InventoryBotWidget({ onAskBot }) {
             ))}
             {isSending ? (
               <div className="bot-message bot-message--bot">
-                <p>Atlas Inventory Bot is checking inventory...</p>
+                <p>A.R.I.A. is checking live inventory...</p>
               </div>
             ) : null}
             <div ref={messagesEndRef} />
@@ -131,20 +135,20 @@ function InventoryBotWidget({ onAskBot }) {
 
           <form className="bot-widget__form" onSubmit={handleSubmit}>
             <label className="sr-only" htmlFor="inventory-bot-question">
-              Ask Atlas Inventory Bot a question
+              Ask A.R.I.A. a question
             </label>
             <textarea
-              aria-label="Ask Atlas Inventory Bot a question"
+              aria-label="Ask A.R.I.A. a question"
               className="ui-input bot-widget__input"
               id="inventory-bot-question"
               onChange={(event) => setQuestion(event.target.value)}
-              placeholder="Ask about inventory, value, stock levels, or categories"
+              placeholder="Ask A.R.I.A. about inventory, stock, or categories"
               ref={inputRef}
               rows="3"
               value={question}
             />
             <button className="ui-button" disabled={isSending} type="submit">
-              {isSending ? "Sending..." : "Ask Bot"}
+              {isSending ? "Sending..." : "Ask A.R.I.A."}
             </button>
           </form>
         </div>
