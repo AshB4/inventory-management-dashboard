@@ -1,4 +1,8 @@
 from pathlib import Path
+import json
+import os
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 from flask_cors import CORS
 from flask import Flask, jsonify, request, send_from_directory
@@ -12,6 +16,25 @@ BACKEND_ROOT = Path(__file__).resolve().parent
 FRONTEND_BUILD_DIR = BACKEND_ROOT.parent / "frontend" / "build"
 FRONTEND_STATIC_DIR = FRONTEND_BUILD_DIR / "static"
 
+
+def load_env_file(path):
+    if not path.exists():
+        return
+
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("'\"")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+load_env_file(BACKEND_ROOT.parent / ".env")
+
 app = Flask(
     __name__,
     static_folder=str(FRONTEND_STATIC_DIR if FRONTEND_STATIC_DIR.exists() else BACKEND_ROOT / "static"),
@@ -23,6 +46,10 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{Path(app.root_path) / 'inve
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 ALLOWED_STATUSES = {"in_stock", "low_stock", "out_of_stock", "discontinued"}
+N8N_WEBHOOK_URL = os.getenv(
+    "N8N_WEBHOOK_URL",
+    "http://localhost:5678/webhook/inventory-helper",
+)
 
 CORS(app, resources={r"/api/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}})
 
@@ -346,6 +373,25 @@ def inventory_value():
     )
 
 
+@app.route("/api/inventory-bot", methods=["POST"])
+def inventory_bot():
+    payload = request.get_json(silent=True) or {}
+    question = str(payload.get("question", "")).strip()
+    context = get_inventory_context(question)
+    bot_result = call_n8n_inventory_bot(question, context)
+
+    if bot_result.get("success"):
+        return api_response(True, "Inventory bot response generated.", bot_result["data"])
+
+    status_code = bot_result.get("status_code", 503)
+    return api_response(
+        False,
+        "Sorry, Atlas is down right now.",
+        {"error_code": status_code},
+        status_code=status_code,
+    )
+
+
 @app.route("/api/stats/out-of-stock", methods=["GET"])
 def out_of_stock_products():
     out_of_stock_count = db.session.scalar(
@@ -373,6 +419,135 @@ def most_expensive_product():
         "Most expensive product retrieved.",
         {"product": product.to_dict()},
     )
+
+def get_inventory_context(question):
+    normalized = str(question or "").lower()
+
+    if "most expensive" in normalized:
+        product = Product.query.order_by(Product.price.desc(), Product.updated_at.desc()).first()
+        if product is None:
+            return {"intent": "most_expensive_product", "data": {"product": None}}
+        return {"intent": "most_expensive_product", "data": {"product": product.to_dict()}}
+
+    if "inventory value" in normalized or "total value" in normalized:
+        total_value = db.session.scalar(db.select(func.sum(Product.price * Product.quantity)))
+        normalized_value = round(float(total_value or 0), 2)
+        return {"intent": "inventory_value", "data": {"inventory_value": normalized_value}}
+
+    if "low stock" in normalized or "low in stock" in normalized:
+        low_stock_count = db.session.scalar(
+            db.select(func.count(Product.id)).where(Product.status == "low_stock")
+        ) or 0
+        return {"intent": "low_stock", "data": {"low_stock_products": low_stock_count}}
+
+    if "total products" in normalized or "how many products" in normalized or "how many items" in normalized:
+        total = db.session.scalar(db.select(func.count(Product.id))) or 0
+        return {"intent": "total_products", "data": {"total_products": total}}
+
+    if "category" in normalized:
+        categories = [
+            row[0]
+            for row in db.session.execute(
+                db.select(Product.category).distinct().order_by(Product.category.asc())
+            ).all()
+            if row and row[0]
+        ]
+        return {"intent": "categories", "data": {"categories": categories}}
+
+    return {"intent": "unsupported", "data": None}
+
+
+def call_n8n_inventory_bot(question, context):
+    request_body = {
+        "question": question,
+        "context": context,
+    }
+    request_obj = Request(
+        N8N_WEBHOOK_URL,
+        data=json.dumps(request_body).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+
+    try:
+        with urlopen(request_obj, timeout=30) as response:
+            raw_body = response.read().decode("utf-8").strip()
+    except HTTPError as error:
+        return {
+            "success": False,
+            "status_code": getattr(error, "code", None) or 502,
+        }
+    except (URLError, TimeoutError, ValueError):
+        return {
+            "success": False,
+            "status_code": 503,
+        }
+
+    if not raw_body:
+        return {
+            "success": False,
+            "status_code": 502,
+        }
+
+    try:
+        response_payload = json.loads(raw_body)
+    except json.JSONDecodeError:
+        return {
+            "success": False,
+            "status_code": 502,
+        }
+
+    if not isinstance(response_payload, dict):
+        return {
+            "success": False,
+            "status_code": 502,
+        }
+
+    if "answer" not in response_payload and "data" in response_payload and isinstance(response_payload["data"], dict):
+        response_payload = response_payload["data"]
+
+    if not response_payload.get("answer"):
+        return {
+            "success": False,
+            "status_code": 502,
+        }
+
+    return {
+        "success": True,
+        "data": {
+            "question": response_payload.get("question", question),
+            "answer": response_payload["answer"],
+            "data": response_payload.get("data", context.get("data")),
+        },
+    }
+
+
+def build_fact_answer(context):
+    intent = context.get("intent")
+    data = context.get("data") or {}
+
+    if intent == "low_stock":
+        return f"There are {data.get('low_stock_products', 0)} products currently low in stock."
+
+    if intent == "inventory_value":
+        return f"The current total inventory value is ${float(data.get('inventory_value', 0)):.2f}."
+
+    if intent == "total_products":
+        return f"There are {data.get('total_products', 0)} products in the catalog."
+
+    if intent == "most_expensive_product":
+        product = data.get("product")
+        if not product:
+            return "No products were found in the catalog."
+        return f"The most expensive product is {product.get('name')} at ${float(product.get('price', 0)):.2f}."
+
+    if intent == "categories":
+        categories = data.get("categories", [])
+        if not categories:
+            return "No product categories were found."
+        return f"The catalog includes these categories: {', '.join(categories)}."
+
+    return None
 
 
 if __name__ == "__main__":

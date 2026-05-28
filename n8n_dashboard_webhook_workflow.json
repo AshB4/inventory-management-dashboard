@@ -1,61 +1,26 @@
 {
-  "name": "Atlas Inventory Bot",
+  "name": "Atlas Inventory Bot Webhook",
   "nodes": [
     {
       "parameters": {
-        "public": true,
-        "availableInChat": true,
-        "agentIcon": {
-          "type": "icon",
-          "value": "flask-conical"
-        },
-        "agentName": "Atlas Inventory Bot",
-        "agentDescription": "Inventory assistant connected to the Flask API",
-        "suggestedPrompts": {
-          "prompts": [
-            {
-              "icon": {
-                "type": "icon",
-                "value": "package"
-              },
-              "text": "How many products do we have in the catalog?"
-            },
-            {
-              "icon": {
-                "type": "icon",
-                "value": "triangle-alert"
-              },
-              "text": "How many products are low in stock?"
-            },
-            {
-              "icon": {
-                "type": "icon",
-                "value": "badge-dollar-sign"
-              },
-              "text": "What is the total inventory value?"
-            }
-          ]
-        },
+        "httpMethod": "POST",
+        "path": "inventory-helper",
+        "responseMode": "responseNode",
         "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-      "typeVersion": 1.4,
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
       "position": [
         -300,
-        -140
+        -120
       ],
       "id": "1",
-      "name": "When chat message received",
-      "webhookId": "atlas-inventory-bot-chat-trigger",
-      "alwaysOutputData": true,
-      "executeOnce": true,
-      "retryOnFail": true,
-      "notesInFlow": true,
-      "notes": "AI inventory assistant connected to the local Flask backend."
+      "name": "Webhook Trigger",
+      "webhookId": "atlas-inventory-helper"
     },
     {
       "parameters": {
-        "text": "={{ $json.chatInput }}",
+        "text": "={{ $json.body?.question || $json.question || '' }}",
         "options": {
           "systemMessage": "You are Atlas Inventory Bot, an inventory assistant connected to a Flask API. Your job is to answer questions about product inventory using real data only. Rules: always use tools when the user asks about products, counts, stock, prices, value, or inventory. Never guess or hallucinate numbers. Use only the tool responses for factual claims. Respond in clear, natural English. Do not mention tools, endpoints, or internal system details."
         }
@@ -63,8 +28,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        240,
-        -140
+        120,
+        -120
       ],
       "id": "2",
       "name": "AI Agent"
@@ -83,8 +48,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
       "position": [
-        20,
-        80
+        -40,
+        100
       ],
       "id": "3",
       "name": "OpenAI Chat Model"
@@ -92,14 +57,14 @@
     {
       "parameters": {
         "toolDescription": "Returns the total number of products in the catalog. Use this for questions about how many products exist overall.",
-        "url": "http://localhost:5000/api/stats/total-products",
+        "url": "http://127.0.0.1:5000/api/stats/total-products",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        180,
-        80
+        120,
+        100
       ],
       "id": "4",
       "name": "Get Product Count"
@@ -107,14 +72,14 @@
     {
       "parameters": {
         "toolDescription": "Returns the current low-stock count. Use this for questions about low stock items or items low in stock.",
-        "url": "http://localhost:5000/api/stats/low-stock",
+        "url": "http://127.0.0.1:5000/api/stats/low-stock",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        340,
-        80
+        280,
+        100
       ],
       "id": "5",
       "name": "Get Low Stock Count"
@@ -122,14 +87,14 @@
     {
       "parameters": {
         "toolDescription": "Returns the total inventory value. Use this for questions about the total value of inventory.",
-        "url": "http://localhost:5000/api/stats/inventory-value",
+        "url": "http://127.0.0.1:5000/api/stats/inventory-value",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        500,
-        80
+        440,
+        100
       ],
       "id": "6",
       "name": "Get Inventory Value"
@@ -137,14 +102,14 @@
     {
       "parameters": {
         "toolDescription": "Returns the most expensive product in the catalog. Use this for questions about the most expensive item or product.",
-        "url": "http://localhost:5000/api/stats/most-expensive-product",
+        "url": "http://127.0.0.1:5000/api/stats/most-expensive-product",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        660,
-        80
+        600,
+        100
       ],
       "id": "7",
       "name": "Get Most Expensive Product"
@@ -152,22 +117,37 @@
     {
       "parameters": {
         "toolDescription": "Returns all products in the catalog. Use this for listing products or finding product names and categories.",
-        "url": "http://localhost:5000/api/products",
+        "url": "http://127.0.0.1:5000/api/products",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequestTool",
       "typeVersion": 4.4,
       "position": [
-        820,
-        80
+        760,
+        100
       ],
       "id": "8",
       "name": "Get All Products"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"question\": \"{{ $('Webhook Trigger').item.json.body?.question || $('Webhook Trigger').item.json.question || '' }}\",\n  \"answer\": \"{{ $json.output || $json.text || $json.response || $json.message || '' }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        420,
+        -120
+      ],
+      "id": "9",
+      "name": "Respond to Webhook"
     }
   ],
   "pinData": {},
   "connections": {
-    "When chat message received": {
+    "Webhook Trigger": {
       "main": [
         [
           {
@@ -246,7 +226,13 @@
     },
     "AI Agent": {
       "main": [
-        []
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   },
@@ -258,10 +244,10 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "atlas-inventory-bot-ai-agent",
+  "versionId": "atlas-inventory-bot-webhook-ai-agent",
   "meta": {
     "templateCredsSetupCompleted": false
   },
-  "id": "atlasInventoryBotAiAgent",
+  "id": "atlasInventoryBotWebhookAiAgent",
   "tags": []
 }
