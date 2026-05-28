@@ -229,6 +229,9 @@ def frontend_assets(path):
     if request.path.startswith("/api/"):
         return api_response(False, "Resource not found.", status_code=404)
 
+    if path.startswith("static/"):
+        return send_from_directory(FRONTEND_BUILD_DIR, path)
+
     frontend_target = FRONTEND_BUILD_DIR / path
     if FRONTEND_BUILD_DIR.exists() and frontend_target.exists() and frontend_target.is_file():
         return send_from_directory(FRONTEND_BUILD_DIR, path)

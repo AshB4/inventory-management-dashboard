@@ -132,6 +132,8 @@ The automation layer supports:
 
 n8n acts as the orchestration layer between the A.R.I.A. assistant, OpenAI model reasoning, and the Flask backend API.
 
+![n8n workflow](images/n8n-workflow.png)
+
 ## AWS Deployment
 
 The application is designed for deployment on AWS EC2.
@@ -152,23 +154,21 @@ In production, Flask hosts both:
 
 ## Screenshots
 
-[SCREENSHOT_PLACEHOLDER: Dashboard Overview]
+### Dashboard Overview
 
+![Dashboard overview](images/dashboard-overview.png)
 
+### Inventory CRUD
 
-[SCREENSHOT_PLACEHOLDER: Inventory Table]
+![Inventory CRUD](images/inventory-crud.png)
 
+### A.R.I.A. Assistant
 
+![A.R.I.A. assistant chat](images/ai-assistant-chat.png)
 
-[SCREENSHOT_PLACEHOLDER: Product Form]
+### n8n Workflow
 
-
-
-[SCREENSHOT_PLACEHOLDER: A.R.I.A. Assistant]
-
-
-
-[SCREENSHOT_PLACEHOLDER: Mobile Responsive Layout]
+![n8n workflow](images/n8n-workflow.png)
 
 
 
@@ -249,10 +249,8 @@ The A.R.I.A. workflow should be active and configured with the Chat Trigger URL 
 │   ├── models/
 │   ├── static/
 │   └── templates/
-├── n8n_workflows/
-│   └── workflow exports
-├── screenshots/
-│   └── project screenshots
+├── images/
+│   └── project screenshots and workflow images
 ├── n8n_workflow.json
 ├── n8n_dashboard_webhook_workflow.json
 └── README.md
