@@ -12,7 +12,7 @@ The application is designed for AWS EC2 deployment, with the production React bu
 
 ## Live Demo
 
-[View the deployed ATLAS Robotics Supply app](https://capstone-ashley.pathway4.click/)
+No longer live
 
 ## Features
 
